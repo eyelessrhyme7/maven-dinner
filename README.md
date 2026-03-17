@@ -46,6 +46,15 @@ export OPENAI_API_KEY=your-api-key-here
    - Use `mock_dataset_linkedin_profiles.json` as a template/example
    - Rename or copy to `dataset_linkedin_profiles.json`
 
+   **Scraping LinkedIn Profiles:** You can use the [LinkedIn Profile Full Sections Scraper](https://apify.com/apimaestro/linkedin-profile-full-sections-scraper) on Apify to extract profile data in a compatible format. The scraper returns data with the same structure as `mock_dataset_linkedin_profiles.json` including:
+   - `basic_info` (name, headline, location, about, etc.)
+   - `experience` (work history with title, company, duration, description)
+   - `education` (schools, degrees, activities)
+   - `projects` (personal/professional projects)
+   - `recommendations` (received and given)
+   
+   Simply provide LinkedIn profile usernames or URLs and export the results as JSON.
+
 2. **Dinner Registration CSV** (optional) - `dinner_list_reg.csv` with columns:
    - `name` - Attendee name
    - `A one liner on what you're building or working on right now.`
