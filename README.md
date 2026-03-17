@@ -188,6 +188,8 @@ The data generation scripts use OpenAI's API. Costs depend on:
 
 For 22 attendees: ~22 game calls + ~231 link calls = ~253 API calls total.
 
+**Example cost:** 23 attendees with ~260 API calls (link data + game data) cost approximately $1.70.
+
 ## License
 
 MIT
