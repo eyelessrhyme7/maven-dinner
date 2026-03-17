@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maven Dinner - Connection Map</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    /* Page-specific styles */
+    .container {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Navigation Header */
+    .nav-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-brand span {
+      color: var(--accent-green);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Graph Canvas */
+    #graph-container {
+      flex: 1;
+      height: 100%;
+      padding-top: 60px;
+    }
+
+    #graph-svg {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, #151520 0%, #0a0a0f 100%);
+    }
+
+    /* Graph Nodes */
+    .node {
+      cursor: pointer;
+    }
+
+    .node-circle {
+      fill: var(--bg-secondary);
+      stroke: var(--border-color);
+      stroke-width: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .node:hover .node-circle {
+      stroke: var(--accent-green);
+      stroke-width: 3px;
+      filter: drop-shadow(0 0 15px rgba(0, 214, 125, 0.5));
+    }
+    
+    .node.selected .node-circle {
+      stroke: var(--accent-green);
+      stroke-width: 5px;
+      filter: drop-shadow(0 0 25px rgba(0, 214, 125, 0.7));
+    }
+
+    .node.highlighted .node-circle {
+      stroke: var(--accent-blue);
+      stroke-width: 5px;
+      filter: drop-shadow(0 0 25px rgba(77, 171, 247, 0.7));
+    }
+
+    .node-image {
+      clip-path: circle(50%);
+    }
+
+    .node-label {
+      font-size: 13px;
+      font-weight: 600;
+      fill: var(--text-primary);
+      text-anchor: middle;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .node.selected .node-label,
+    .node.highlighted .node-label {
+      fill: #ffffff;
+      font-weight: 700;
+      font-size: 14px;
+      text-shadow: 0 0 10px rgba(0, 214, 125, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9);
+    }
+
+    /* Graph Links - improved coloring */
+    .link {
+      stroke-opacity: 0.7;
+      transition: all 0.3s ease;
+    }
+
+    .link.score-90 { stroke: #005a32; stroke-width: 3px; } /* Dark green 90+ */
+    .link.score-85 { stroke: #007a3d; stroke-width: 2.5px; } /* Green 85-90 */
+    .link.score-80 { stroke: #00a050; stroke-width: 2px; } /* Medium green 80-85 */
+    .link.score-79 { stroke: #4db870; stroke-width: 1.8px; } /* Yellow-green */
+    .link.score-78 { stroke: #7bc96f; stroke-width: 1.8px; }
+    .link.score-77 { stroke: #9fd170; stroke-width: 1.7px; }
+    .link.score-76 { stroke: #b8d86b; stroke-width: 1.7px; }
+    .link.score-75 { stroke: #d4e065; stroke-width: 1.6px; }
+    .link.score-70 { stroke: #9b59b6; stroke-width: 1.5px; } /* Purple 70-75 */
+    .link.score-60 { stroke: #8e44ad; stroke-width: 1.3px; } /* Purple 60-70 */
+    .link.score-low { stroke: #f1c40f; stroke-width: 1px; stroke-opacity: 0.5; } /* Yellow <60 */
+
+    .link.hidden {
+      display: none;
+    }
+
+    .link.highlighted {
+      stroke-opacity: 1;
+      stroke-width: 4px !important;
+      filter: drop-shadow(0 0 6px currentColor);
+    }
+
+    .link.dimmed {
+      stroke-opacity: 0.08;
+    }
+
+    /* Left Panel */
+    .left-panel {
+      position: fixed;
+      left: 0;
+      top: 60px;
+      width: 380px;
+      height: calc(100vh - 60px);
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border-color);
+      padding: 24px;
+      overflow-y: auto;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 50;
+    }
+
+    .left-panel.open {
+      transform: translateX(0);
+      animation: slideInLeft 0.3s ease;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .panel-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .panel-close:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .panel-name {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .panel-headline {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .panel-section {
+      margin-top: 20px;
+    }
+
+    .panel-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .panel-content {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Connection List */
+    .connection-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .connection-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .connection-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .connection-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .connection-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .connection-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .connection-reason {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .connection-actions {
+      display: flex;
+      align-items: center;
+    }
+
+    /* Tooltip for + button - positioned to the right */
+    .connection-tooltip {
+      position: fixed;
+      background: var(--bg-glass-hover);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      width: 340px;
+      max-height: 350px;
+      overflow-y: auto;
+      z-index: 200;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      animation: fadeIn 0.2s ease;
+    }
+    
+    .connection-tooltip::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .connection-tooltip::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .connection-tooltip::-webkit-scrollbar-thumb {
+      background: rgba(150, 150, 160, 0.4);
+      border-radius: 3px;
+    }
+    
+    .connection-tooltip::-webkit-scrollbar-thumb:hover {
+      background: rgba(150, 150, 160, 0.6);
+    }
+    
+    .tooltip-profile-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .tooltip-profile-pic {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border-color);
+    }
+    
+    .tooltip-profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .tooltip-profile-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    
+    .tooltip-profile-headline {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .tooltip-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .tooltip-meta-item {
+      font-size: 11px;
+    }
+    
+    .tooltip-meta-label {
+      color: var(--text-muted);
+      margin-right: 6px;
+    }
+    
+    .tooltip-meta-value {
+      color: var(--text-secondary);
+    }
+
+    .tooltip-section {
+      margin-bottom: 10px;
+    }
+
+    .tooltip-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .tooltip-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .tooltip-content {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .tooltip-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .tooltip-list li {
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 2px 0;
+      padding-left: 10px;
+      position: relative;
+    }
+
+    .tooltip-list li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--accent-green);
+    }
+
+    /* Filter and Exclusions Buttons */
+    .bottom-controls {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    
+    .filter-wrapper {
+      position: relative;
+    }
+    
+    .filter-toggle {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    .filter-toggle:hover {
+      background: var(--bg-glass-hover);
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .filter-toggle.open {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+    
+    .filter-toggle .arrow {
+      transition: transform 0.2s ease;
+    }
+    
+    .filter-toggle.open .arrow {
+      transform: rotate(180deg);
+    }
+    
+    .filter-controls {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      right: 0;
+      background: var(--bg-glass);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .filter-controls.open {
+      display: flex;
+      animation: fadeIn 0.2s ease;
+    }
+    
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    
+    .filter-option:hover {
+      color: var(--text-primary);
+    }
+    
+    .filter-option input {
+      accent-color: var(--accent-green);
+    }
+
+    /* Exclusions Modal */
+    .exclusions-content {
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .person-exclusion {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .person-exclusion:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .person-exclusion-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .person-exclusion-name {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .exclusion-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding-left: 36px;
+    }
+
+    .exclusion-checkboxes label {
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="nav-header">
+    <div class="nav-brand">
+      <span>◆</span> Maven Dinner
+    </div>
+    <nav class="nav-links">
+      <a href="index.html" class="nav-link active">Map</a>
+      <a href="game.html" class="nav-link">Game</a>
+      <a href="phone.html" class="nav-link">Phone</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- Graph Container -->
+    <div id="graph-container">
+      <svg id="graph-svg"></svg>
+    </div>
+
+    <!-- Left Panel (Selected Person) -->
+    <aside class="left-panel glass-panel" id="left-panel">
+      <button class="panel-close" id="close-left-panel">&times;</button>
+      <div class="panel-header">
+        <img class="profile-pic profile-pic-large" id="panel-pic" src="" alt="">
+        <div>
+          <div class="panel-name" id="panel-name"></div>
+          <div class="panel-headline" id="panel-headline"></div>
+        </div>
+      </div>
+      
+      <div class="panel-section">
+        <div class="panel-section-title">What they're building</div>
+        <div class="panel-content" id="panel-oneliner"></div>
+      </div>
+      
+      <div class="panel-section">
+        <div class="panel-section-title">Who they want to meet</div>
+        <div class="panel-content" id="panel-wanttomeet"></div>
+      </div>
+      
+      <div class="panel-section">
+        <div class="panel-section-title">You Should Meet</div>
+        <div class="connection-list" id="connection-list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Bottom Controls -->
+  <div class="bottom-controls">
+    <div class="filter-wrapper">
+      <div class="filter-controls" id="filter-controls">
+        <label class="filter-option">
+          <input type="checkbox" id="filter-80" value="80"> Only show &gt;80%
+        </label>
+        <label class="filter-option">
+          <input type="checkbox" id="filter-75" value="75"> Only show &gt;75%
+        </label>
+        <label class="filter-option">
+          <input type="checkbox" id="ignore-exclusions"> Ignore exclusions
+        </label>
+        <label class="filter-option">
+          <input type="checkbox" id="sparse-mode"> Sparse layout
+        </label>
+      </div>
+      <button class="filter-toggle" id="filter-toggle" title="Filters">
+        <span class="arrow">▲</span>
+      </button>
+    </div>
+    <button class="btn btn-secondary" id="exclusions-btn">
+      <span>?</span> Exclusions
+    </button>
+  </div>
+
+  <!-- Exclusions Modal -->
+  <div class="modal-overlay" id="exclusions-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Who have you already met?</h2>
+        <button class="modal-close" id="close-exclusions">&times;</button>
+      </div>
+      <div class="exclusions-content" id="exclusions-content">
+        <!-- Generated dynamically -->
+      </div>
+      <div style="margin-top: 20px; text-align: right;">
+        <button class="btn btn-primary" id="save-exclusions">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connection Tooltip -->
+  <div class="connection-tooltip" id="connection-tooltip" style="display: none;"></div>
+
+  <script>
+    // Global state
+    let profiles = [];
+    let exclusions = {};
+    let selectedNode = null;
+    let highlightedNode = null;
+    let simulation = null;
+    let minScoreFilter = 0;
+    let ignoreExclusions = false;
+    let sparseMode = false;
+
+    // Load data
+    async function loadData() {
+      try {
+        // Add cache-busting to prevent browser caching
+        const cacheBuster = `?t=${Date.now()}`;
+        const [profilesRes, exclusionsRes] = await Promise.all([
+          fetch('final_data.json' + cacheBuster),
+          fetch('exclusions.json' + cacheBuster)
+        ]);
+        
+        const finalData = await profilesRes.json();
+        profiles = finalData.profiles || [];
+        
+        const exclusionsData = await exclusionsRes.json();
+        exclusions = {};
+        exclusionsData.forEach(e => {
+          exclusions[e.name] = new Set(e.alreadyMet || []);
+        });
+        
+        initGraph();
+        initExclusionsModal();
+        initFilters();
+      } catch (error) {
+        console.error('Error loading data:', error);
+        document.getElementById('graph-container').innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">
+            <div style="text-align: center;">
+              <p>Error loading data. Make sure final_data.json exists.</p>
+              <p style="font-size: 12px; margin-top: 8px;">Run the notebook and agent scripts first.</p>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Check if link is excluded (respects ignoreExclusions flag)
+    function isExcluded(name1, name2) {
+      if (ignoreExclusions) return false;
+      return (exclusions[name1] && exclusions[name1].has(name2)) ||
+             (exclusions[name2] && exclusions[name2].has(name1));
+    }
+
+    // Get link color class based on score - improved gradient
+    function getLinkClass(score) {
+      if (score >= 90) return 'score-90';
+      if (score >= 85) return 'score-85';
+      if (score >= 80) return 'score-80';
+      if (score >= 79) return 'score-79';
+      if (score >= 78) return 'score-78';
+      if (score >= 77) return 'score-77';
+      if (score >= 76) return 'score-76';
+      if (score >= 75) return 'score-75';
+      if (score >= 70) return 'score-70';
+      if (score >= 60) return 'score-60';
+      return 'score-low';
+    }
+
+    // Get score badge class
+    function getScoreClass(score) {
+      if (score >= 80) return 'score-high';
+      if (score >= 40) return 'score-medium';
+      return 'score-low';
+    }
+
+    // Initialize the D3 graph
+    function initGraph() {
+      const container = document.getElementById('graph-container');
+      const svg = d3.select('#graph-svg');
+      const width = container.clientWidth;
+      const height = container.clientHeight - 60;
+
+      svg.attr('viewBox', [0, 0, width, height]);
+
+      // Create a main group for zoom/pan
+      const mainGroup = svg.append('g').attr('class', 'main-group');
+      
+      const graphCenterX = width / 2 + 200;
+      const graphCenterY = height / 2;
+      
+      // Zoom and pan behavior
+      const zoom = d3.zoom()
+        .scaleExtent([0.3, 3])
+        .on('zoom', (event) => {
+          mainGroup.attr('transform', event.transform);
+        });
+      
+      svg.call(zoom);
+
+      // Build nodes
+      const nodes = profiles.map((p, i) => ({
+        id: i,
+        name: p.name,
+        pic: p.profile_picture_url,
+        headline: p.headline,
+        oneLiner: p.one_liner,
+        wantToMeet: p.who_they_want_to_meet,
+        links: p.links || [],
+        x: width / 2 + (Math.random() - 0.5) * 300,
+        y: height / 2 + (Math.random() - 0.5) * 300
+      }));
+
+      // Build links (deduplicated)
+      const linksSet = new Set();
+      const links = [];
+      
+      profiles.forEach((p, i) => {
+        (p.links || []).forEach(link => {
+          const targetIdx = profiles.findIndex(pr => pr.name === link.target_name);
+          if (targetIdx !== -1 && targetIdx !== i) {
+            const key = [Math.min(i, targetIdx), Math.max(i, targetIdx)].join('-');
+            if (!linksSet.has(key)) {
+              linksSet.add(key);
+              links.push({
+                source: i,
+                target: targetIdx,
+                score: link.score,
+                excluded: isExcluded(p.name, link.target_name)
+              });
+            }
+          }
+        });
+      });
+
+      // Create link elements inside main group
+      const linkGroup = mainGroup.append('g').attr('class', 'links');
+      const linkElements = linkGroup.selectAll('line')
+        .data(links)
+        .enter()
+        .append('line')
+        .attr('class', d => `link ${getLinkClass(d.score)} ${d.excluded ? 'hidden' : ''}`);
+
+      // Create node groups inside main group
+      const nodeGroup = mainGroup.append('g').attr('class', 'nodes');
+      const nodeElements = nodeGroup.selectAll('g')
+        .data(nodes)
+        .enter()
+        .append('g')
+        .attr('class', 'node')
+        .call(d3.drag()
+          .on('start', dragStarted)
+          .on('drag', dragged)
+          .on('end', dragEnded));
+
+      // Add circles
+      nodeElements.append('circle')
+        .attr('class', 'node-circle')
+        .attr('r', 38);
+
+      // Add images
+      nodeElements.append('image')
+        .attr('class', 'node-image')
+        .attr('xlink:href', d => d.pic || '')
+        .attr('x', -34)
+        .attr('y', -34)
+        .attr('width', 68)
+        .attr('height', 68)
+        .on('error', function() {
+          d3.select(this).attr('xlink:href', '');
+        });
+
+      // Add labels
+      nodeElements.append('text')
+        .attr('class', 'node-label')
+        .attr('y', 54)
+        .text(d => d.name.split(' ')[0]);
+
+      // Node click handler
+      nodeElements.on('click', (event, d) => {
+        event.stopPropagation();
+        selectNode(d, nodes, links, linkElements, nodeElements);
+      });
+
+      // Click outside to deselect
+      svg.on('click', () => {
+        deselectAll(linkElements, nodeElements);
+      });
+
+      // Force simulation - stretched horizontally towards right, slight vertical compression
+      simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(180))
+        .force('charge', d3.forceManyBody().strength(-550))
+        .force('center', d3.forceCenter(graphCenterX, graphCenterY))
+        .force('collision', d3.forceCollide().radius(65))
+        .force('x', d3.forceX(graphCenterX).strength(0.02))
+        .force('y', d3.forceY(graphCenterY).strength(0.12))
+        .on('tick', () => {
+          linkElements
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+
+          nodeElements.attr('transform', d => `translate(${d.x},${d.y})`);
+        });
+
+      // Drag functions
+      function dragStarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+
+      function dragEnded(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
+
+      // Store references globally for updates
+      window.graphData = { nodes, links, linkElements, nodeElements };
+    }
+
+    // Select a node
+    function selectNode(node, nodes, links, linkElements, nodeElements) {
+      selectedNode = node;
+      hideTooltip();
+
+      // Update node styles
+      nodeElements.classed('selected', d => d.id === node.id);
+      nodeElements.classed('highlighted', false);
+
+      // Update link styles
+      linkElements
+        .classed('highlighted', d => d.source.id === node.id || d.target.id === node.id)
+        .classed('dimmed', d => d.source.id !== node.id && d.target.id !== node.id);
+
+      // Update left panel
+      updateLeftPanel(node);
+      document.getElementById('left-panel').classList.add('open');
+    }
+
+    // Deselect all
+    function deselectAll(linkElements, nodeElements) {
+      selectedNode = null;
+      highlightedNode = null;
+      
+      nodeElements.classed('selected', false);
+      nodeElements.classed('highlighted', false);
+      linkElements.classed('highlighted', false);
+      linkElements.classed('dimmed', false);
+      
+      document.getElementById('left-panel').classList.remove('open');
+      hideTooltip();
+    }
+
+    // Update left panel content
+    function updateLeftPanel(node) {
+      document.getElementById('panel-pic').src = node.pic || '';
+      document.getElementById('panel-name').textContent = node.name;
+      document.getElementById('panel-headline').textContent = node.headline || '';
+      document.getElementById('panel-oneliner').textContent = node.oneLiner || 'Not specified';
+      document.getElementById('panel-wanttomeet').textContent = node.wantToMeet || 'Not specified';
+
+      // Build connection list
+      const connectionList = document.getElementById('connection-list');
+      connectionList.innerHTML = '';
+
+      const filteredLinks = (node.links || [])
+        .filter(link => !isExcluded(node.name, link.target_name))
+        .filter(link => link.score > minScoreFilter)
+        .sort((a, b) => b.score - a.score);
+
+      filteredLinks.forEach(link => {
+        const targetProfile = profiles.find(p => p.name === link.target_name);
+        if (!targetProfile) return;
+
+        const item = document.createElement('div');
+        item.className = 'connection-item';
+        item.innerHTML = `
+          <img class="profile-pic profile-pic-small" src="${targetProfile.profile_picture_url || ''}" alt="">
+          <div class="connection-info">
+            <div class="connection-header">
+              <span class="connection-name">${link.target_name}</span>
+              <span class="score-badge ${getScoreClass(link.score)}">${link.score}%</span>
+            </div>
+            <div class="connection-reason">${link.one_liner_both || ''}</div>
+          </div>
+          <div class="connection-actions">
+            <button class="icon-btn plus-btn" data-target="${link.target_name}">+</button>
+          </div>
+        `;
+
+        // Plus button handler
+        const plusBtn = item.querySelector('.plus-btn');
+        plusBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showConnectionDetails(node, link, targetProfile, plusBtn);
+        });
+
+        connectionList.appendChild(item);
+      });
+    }
+
+    // Show connection details (tooltip to the right of + button)
+    function showConnectionDetails(sourceNode, link, targetProfile, btnElement) {
+      // Highlight both nodes
+      highlightNode(link.target_name);
+      
+      // Show tooltip to the right of the + button
+      const tooltip = document.getElementById('connection-tooltip');
+      const rect = btnElement.getBoundingClientRect();
+      
+      tooltip.innerHTML = `
+        <div class="tooltip-profile-header">
+          <img class="tooltip-profile-pic" src="${targetProfile.profile_picture_url || ''}" alt="">
+          <div class="tooltip-profile-info">
+            <div class="tooltip-profile-name">${targetProfile.name}</div>
+            <div class="tooltip-profile-headline">${targetProfile.headline || ''}</div>
+          </div>
+        </div>
+        <div class="tooltip-meta">
+          <div class="tooltip-meta-item">
+            <span class="tooltip-meta-label">Building:</span>
+            <span class="tooltip-meta-value">${targetProfile.one_liner || 'Not specified'}</span>
+          </div>
+          <div class="tooltip-meta-item">
+            <span class="tooltip-meta-label">Wants to meet:</span>
+            <span class="tooltip-meta-value">${targetProfile.who_they_want_to_meet || 'Not specified'}</span>
+          </div>
+        </div>
+        <div class="tooltip-section">
+          <div class="tooltip-label">Synergies</div>
+          <ul class="tooltip-list">
+            ${(link.synergies || []).map(s => `<li>${s}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="tooltip-section">
+          <div class="tooltip-label">Collaboration Opportunities</div>
+          <ul class="tooltip-list">
+            ${(link.collaboration_opportunities || []).map(c => `<li>${c}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="tooltip-section">
+          <div class="tooltip-label">Why ${sourceNode.name.split(' ')[0]} should meet ${link.target_name.split(' ')[0]}</div>
+          <div class="tooltip-content">${link.why_x_should_meet_y || ''}</div>
+        </div>
+      `;
+
+      // Position to the right of the + button
+      const tooltipWidth = 340;
+      let left = rect.right + 10;
+      
+      // If tooltip would go off screen right, show it to the left
+      if (left + tooltipWidth > window.innerWidth - 20) {
+        left = rect.left - tooltipWidth - 10;
+      }
+      
+      // Position tooltip - try to show it higher up on screen
+      let top = Math.min(rect.top - 100, window.innerHeight - 400);
+      if (top < 70) top = 70;
+      
+      tooltip.style.top = `${top}px`;
+      tooltip.style.left = `${left}px`;
+      
+      tooltip.style.display = 'block';
+
+      // Close tooltip on click outside
+      const closeTooltipHandler = (e) => {
+        if (!tooltip.contains(e.target) && !btnElement.contains(e.target)) {
+          hideTooltip();
+          document.removeEventListener('click', closeTooltipHandler);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', closeTooltipHandler), 10);
+    }
+    
+    // Hide tooltip
+    function hideTooltip() {
+      document.getElementById('connection-tooltip').style.display = 'none';
+      if (window.graphData) {
+        const { nodeElements } = window.graphData;
+        nodeElements.classed('highlighted', false);
+      }
+      highlightedNode = null;
+    }
+
+    // Highlight a node
+    function highlightNode(name) {
+      const { nodes, nodeElements } = window.graphData;
+      const node = nodes.find(n => n.name === name);
+      if (node) {
+        highlightedNode = node;
+        nodeElements.classed('highlighted', d => d.name === name);
+      }
+    }
+
+    // Initialize exclusions modal
+    function initExclusionsModal() {
+      const content = document.getElementById('exclusions-content');
+      content.innerHTML = '';
+
+      profiles.forEach(profile => {
+        const div = document.createElement('div');
+        div.className = 'person-exclusion';
+        
+        const header = document.createElement('div');
+        header.className = 'person-exclusion-header';
+        header.innerHTML = `
+          <img class="profile-pic profile-pic-small" src="${profile.profile_picture_url || ''}" alt="">
+          <span class="person-exclusion-name">${profile.name}</span>
+        `;
+        
+        const checkboxes = document.createElement('div');
+        checkboxes.className = 'exclusion-checkboxes';
+        
+        profiles.forEach(other => {
+          if (other.name === profile.name) return;
+          
+          const isChecked = exclusions[profile.name] && exclusions[profile.name].has(other.name);
+          const label = document.createElement('label');
+          label.className = 'checkbox-item';
+          label.innerHTML = `
+            <input type="checkbox" 
+                   data-person="${profile.name}" 
+                   data-other="${other.name}"
+                   ${isChecked ? 'checked' : ''}>
+            ${other.name.split(' ')[0]}
+          `;
+          
+          // Sync bidirectionally when checkbox changes
+          const checkbox = label.querySelector('input');
+          checkbox.addEventListener('change', () => {
+            const reverseCheckbox = document.querySelector(
+              `input[data-person="${other.name}"][data-other="${profile.name}"]`
+            );
+            if (reverseCheckbox) {
+              reverseCheckbox.checked = checkbox.checked;
+            }
+          });
+          
+          checkboxes.appendChild(label);
+        });
+        
+        div.appendChild(header);
+        div.appendChild(checkboxes);
+        content.appendChild(div);
+      });
+    }
+    
+    // Initialize filters
+    function initFilters() {
+      const filter80 = document.getElementById('filter-80');
+      const filter75 = document.getElementById('filter-75');
+      const ignoreExclusionsCheckbox = document.getElementById('ignore-exclusions');
+      const sparseModeCheckbox = document.getElementById('sparse-mode');
+      
+      filter80.addEventListener('change', () => {
+        if (filter80.checked) {
+          filter75.checked = false;
+          minScoreFilter = 80;
+        } else {
+          minScoreFilter = 0;
+        }
+        applyFilters();
+      });
+      
+      filter75.addEventListener('change', () => {
+        if (filter75.checked) {
+          filter80.checked = false;
+          minScoreFilter = 75;
+        } else {
+          minScoreFilter = 0;
+        }
+        applyFilters();
+      });
+      
+      ignoreExclusionsCheckbox.addEventListener('change', () => {
+        ignoreExclusions = ignoreExclusionsCheckbox.checked;
+        applyFilters();
+      });
+      
+      sparseModeCheckbox.addEventListener('change', () => {
+        sparseMode = sparseModeCheckbox.checked;
+        applyFilters();
+      });
+    }
+    
+    // Apply filters to graph
+    function applyFilters() {
+      const { nodes, links, linkElements } = window.graphData;
+      
+      // In sparse mode, only show top 2-3 connections per node
+      let sparseLinks = new Set();
+      if (sparseMode) {
+        nodes.forEach(node => {
+          // Get links for this node, sorted by score
+          const nodeLinks = links
+            .filter(l => {
+              const sourceId = l.source.id !== undefined ? l.source.id : l.source;
+              const targetId = l.target.id !== undefined ? l.target.id : l.target;
+              return sourceId === node.id || targetId === node.id;
+            })
+            .sort((a, b) => b.score - a.score);
+          
+          // Keep top 3 links per node
+          nodeLinks.slice(0, 3).forEach(l => {
+            const sourceId = l.source.id !== undefined ? l.source.id : l.source;
+            const targetId = l.target.id !== undefined ? l.target.id : l.target;
+            sparseLinks.add(`${Math.min(sourceId, targetId)}-${Math.max(sourceId, targetId)}`);
+          });
+        });
+      }
+      
+      linkElements.classed('hidden', d => {
+        const sourceId = d.source.id !== undefined ? d.source.id : d.source;
+        const targetId = d.target.id !== undefined ? d.target.id : d.target;
+        const sourceName = profiles[sourceId]?.name;
+        const targetName = profiles[targetId]?.name;
+        
+        // Basic filters
+        if (d.excluded || isExcluded(sourceName, targetName) || d.score <= minScoreFilter) {
+          return true;
+        }
+        
+        // Sparse mode filter
+        if (sparseMode) {
+          const linkKey = `${Math.min(sourceId, targetId)}-${Math.max(sourceId, targetId)}`;
+          return !sparseLinks.has(linkKey);
+        }
+        
+        return false;
+      });
+      
+      // Update left panel if open
+      if (selectedNode) {
+        updateLeftPanel(selectedNode);
+      }
+    }
+
+    // Save exclusions
+    function saveExclusions() {
+      const checkboxes = document.querySelectorAll('#exclusions-content input[type="checkbox"]');
+      const newExclusions = {};
+      
+      // Initialize empty arrays for all profiles
+      profiles.forEach(p => {
+        newExclusions[p.name] = [];
+      });
+      
+      checkboxes.forEach(cb => {
+        const person = cb.dataset.person;
+        const other = cb.dataset.other;
+        
+        if (cb.checked) {
+          newExclusions[person].push(other);
+        }
+      });
+
+      // Update state (exclusions are symmetric - stored both ways)
+      Object.keys(newExclusions).forEach(name => {
+        exclusions[name] = new Set(newExclusions[name]);
+      });
+
+      // Update graph links
+      applyFilters();
+
+      // Close modal
+      document.getElementById('exclusions-modal').style.display = 'none';
+    }
+
+    // Event listeners
+    document.getElementById('close-left-panel').addEventListener('click', () => {
+      if (window.graphData) {
+        deselectAll(window.graphData.linkElements, window.graphData.nodeElements);
+      }
+    });
+
+    document.getElementById('filter-toggle').addEventListener('click', () => {
+      const toggle = document.getElementById('filter-toggle');
+      const controls = document.getElementById('filter-controls');
+      toggle.classList.toggle('open');
+      controls.classList.toggle('open');
+    });
+
+    document.getElementById('exclusions-btn').addEventListener('click', () => {
+      document.getElementById('exclusions-modal').style.display = 'flex';
+    });
+
+    document.getElementById('close-exclusions').addEventListener('click', () => {
+      document.getElementById('exclusions-modal').style.display = 'none';
+    });
+
+    document.getElementById('save-exclusions').addEventListener('click', saveExclusions);
+
+    document.getElementById('exclusions-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'exclusions-modal') {
+        document.getElementById('exclusions-modal').style.display = 'none';
+      }
+    });
+
+    // Initialize
+    loadData();
+  </script>
+</body>
+</html>

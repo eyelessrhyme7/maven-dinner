@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maven Dinner - Phone View</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      overflow-y: auto;
+      height: auto;
+      min-height: 100vh;
+    }
+    
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-top: 60px;
+    }
+
+    /* Navigation Header */
+    .nav-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-brand span {
+      color: var(--accent-green);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Phone Container */
+    .phone-container {
+      flex: 1;
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Name Selection */
+    .name-selection {
+      margin-bottom: 24px;
+    }
+
+    .name-selection h2 {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .name-select {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-family: var(--font-main);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0b0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+    }
+
+    .name-select:focus {
+      outline: none;
+      border-color: var(--accent-green);
+    }
+
+    /* Selected Profile Header */
+    .profile-header {
+      display: none;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+
+    .profile-header.show {
+      display: flex;
+    }
+
+    .profile-header .profile-pic {
+      width: 60px;
+      height: 60px;
+      flex-shrink: 0;
+    }
+
+    .profile-header-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .profile-header-name {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .profile-header-headline {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Section Title */
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+
+    /* Connection List */
+    .connection-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 100px;
+    }
+
+    .connection-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      transition: all 0.2s;
+    }
+
+    .connection-item.expanded {
+      background: var(--bg-glass-hover);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .connection-item .profile-pic {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+    }
+
+    .connection-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .connection-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .connection-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .connection-reason {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Expanded Details */
+    .connection-details {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .connection-item.expanded .connection-details {
+      display: block;
+    }
+
+    .detail-section {
+      margin-bottom: 12px;
+    }
+
+    .detail-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .detail-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .detail-content {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .detail-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .detail-list li {
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 4px 0;
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .detail-list li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--accent-green);
+    }
+
+    /* Toggle Button */
+    .toggle-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .toggle-btn:hover {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .connection-item.expanded .toggle-btn {
+      transform: rotate(45deg);
+    }
+
+    /* Bottom Controls */
+    .bottom-controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px 20px;
+      background: rgba(10, 10, 15, 0.95);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      z-index: 50;
+    }
+
+    .bottom-controls .btn {
+      flex: 1;
+      max-width: 200px;
+      justify-content: center;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* Exclusions Modal */
+    .exclusions-content {
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .exclusion-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .exclusion-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .exclusion-item input[type="checkbox"] {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .exclusion-item input[type="checkbox"]:checked {
+      background: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+
+    .exclusion-item input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--bg-primary);
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .exclusion-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .exclusion-item-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .exclusion-item-headline {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Connection Count */
+    .connection-count {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+
+    .connection-count span {
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="nav-header">
+    <div class="nav-brand">
+      <span>◆</span> Maven Dinner
+    </div>
+    <nav class="nav-links">
+      <a href="index.html" class="nav-link">Map</a>
+      <a href="game.html" class="nav-link">Game</a>
+      <a href="phone.html" class="nav-link active">Phone</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="phone-container">
+      <!-- Name Selection -->
+      <div class="name-selection">
+        <h2>Who are you?</h2>
+        <select class="name-select" id="name-select">
+          <option value="">Select your name...</option>
+        </select>
+      </div>
+
+      <!-- Selected Profile Header -->
+      <div class="profile-header" id="profile-header">
+        <img class="profile-pic" id="my-pic" src="" alt="">
+        <div class="profile-header-info">
+          <div class="profile-header-name" id="my-name"></div>
+          <div class="profile-header-headline" id="my-headline"></div>
+        </div>
+      </div>
+
+      <!-- Connection List -->
+      <div id="connections-section" style="display: none;">
+        <div class="section-title">People You Should Meet</div>
+        <div class="connection-count" id="connection-count"></div>
+        <div class="connection-list" id="connection-list">
+          <!-- Generated dynamically -->
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="empty-state">
+        <div class="empty-state-icon">👋</div>
+        <div class="empty-state-text">
+          Select your name above to see<br>who you should meet at the dinner.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Controls -->
+  <div class="bottom-controls" id="bottom-controls" style="display: none;">
+    <button class="btn btn-secondary" id="exclusions-btn">
+      <span>✓</span> Already Met
+    </button>
+  </div>
+
+  <!-- Exclusions Modal -->
+  <div class="modal-overlay" id="exclusions-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Who have you already met?</h2>
+        <button class="modal-close" id="close-exclusions">&times;</button>
+      </div>
+      <div class="exclusions-content" id="exclusions-content">
+        <!-- Generated dynamically -->
+      </div>
+      <div style="margin-top: 20px; text-align: right;">
+        <button class="btn btn-primary" id="save-exclusions">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global state
+    let profiles = [];
+    let exclusions = {};
+    let selectedProfile = null;
+
+    // Load data
+    async function loadData() {
+      try {
+        const cacheBuster = `?t=${Date.now()}`;
+        const [profilesRes, exclusionsRes] = await Promise.all([
+          fetch('final_data.json' + cacheBuster),
+          fetch('exclusions.json' + cacheBuster)
+        ]);
+        
+        const finalData = await profilesRes.json();
+        profiles = finalData.profiles || [];
+        
+        const exclusionsData = await exclusionsRes.json();
+        exclusions = {};
+        exclusionsData.forEach(e => {
+          exclusions[e.name] = new Set(e.alreadyMet || []);
+        });
+        
+        populateNameSelect();
+      } catch (error) {
+        console.error('Error loading data:', error);
+        document.getElementById('empty-state').innerHTML = `
+          <div class="empty-state-icon">⚠️</div>
+          <div class="empty-state-text">
+            Error loading data.<br>Make sure final_data.json exists.
+          </div>
+        `;
+      }
+    }
+
+    // Populate name dropdown
+    function populateNameSelect() {
+      const select = document.getElementById('name-select');
+      select.innerHTML = '<option value="">Select your name...</option>';
+      
+      const sortedProfiles = [...profiles].sort((a, b) => 
+        a.name.localeCompare(b.name)
+      );
+      
+      sortedProfiles.forEach(profile => {
+        const option = document.createElement('option');
+        option.value = profile.name;
+        option.textContent = profile.name;
+        select.appendChild(option);
+      });
+    }
+
+    // Check if someone is excluded
+    function isExcluded(myName, theirName) {
+      return (exclusions[myName] && exclusions[myName].has(theirName)) ||
+             (exclusions[theirName] && exclusions[theirName].has(myName));
+    }
+
+    // Get score badge class
+    function getScoreClass(score) {
+      if (score >= 80) return 'score-high';
+      if (score >= 40) return 'score-medium';
+      return 'score-low';
+    }
+
+    // Select a profile
+    function selectProfile(name) {
+      selectedProfile = profiles.find(p => p.name === name);
+      
+      if (!selectedProfile) {
+        document.getElementById('profile-header').classList.remove('show');
+        document.getElementById('connections-section').style.display = 'none';
+        document.getElementById('bottom-controls').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'block';
+        return;
+      }
+
+      // Show profile header
+      document.getElementById('my-pic').src = selectedProfile.profile_picture_url || '';
+      document.getElementById('my-name').textContent = selectedProfile.name;
+      document.getElementById('my-headline').textContent = selectedProfile.headline || '';
+      document.getElementById('profile-header').classList.add('show');
+
+      // Hide empty state, show connections
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('connections-section').style.display = 'block';
+      document.getElementById('bottom-controls').style.display = 'flex';
+
+      // Build connection list
+      buildConnectionList();
+      
+      // Build exclusions modal for this person
+      buildExclusionsModal();
+    }
+
+    // Build connection list
+    function buildConnectionList() {
+      const connectionList = document.getElementById('connection-list');
+      connectionList.innerHTML = '';
+
+      const filteredLinks = (selectedProfile.links || [])
+        .filter(link => !isExcluded(selectedProfile.name, link.target_name))
+        .sort((a, b) => b.score - a.score);
+
+      // Update count
+      const totalConnections = selectedProfile.links?.length || 0;
+      const filteredCount = filteredLinks.length;
+      const excludedCount = totalConnections - filteredCount;
+      
+      let countText = `<span>${filteredCount}</span> connections`;
+      if (excludedCount > 0) {
+        countText += ` (${excludedCount} filtered as already met)`;
+      }
+      document.getElementById('connection-count').innerHTML = countText;
+
+      if (filteredLinks.length === 0) {
+        connectionList.innerHTML = `
+          <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+            ${totalConnections === 0 ? 'No connections found.' : 'You\'ve already met everyone!'}
+          </div>
+        `;
+        return;
+      }
+
+      filteredLinks.forEach(link => {
+        const targetProfile = profiles.find(p => p.name === link.target_name);
+        if (!targetProfile) return;
+
+        const item = document.createElement('div');
+        item.className = 'connection-item';
+        item.innerHTML = `
+          <img class="profile-pic" src="${targetProfile.profile_picture_url || ''}" alt="">
+          <div class="connection-info">
+            <div class="connection-header">
+              <span class="connection-name">${link.target_name}</span>
+              <span class="score-badge ${getScoreClass(link.score)}">${link.score}%</span>
+            </div>
+            <div class="connection-reason">${link.one_liner_both || ''}</div>
+            
+            <div class="connection-details">
+              <div class="detail-section">
+                <div class="detail-label">What they're building</div>
+                <div class="detail-content">${targetProfile.one_liner || 'Not specified'}</div>
+              </div>
+              
+              <div class="detail-section">
+                <div class="detail-label">Who they want to meet</div>
+                <div class="detail-content">${targetProfile.who_they_want_to_meet || 'Not specified'}</div>
+              </div>
+              
+              ${(link.synergies && link.synergies.length > 0) ? `
+              <div class="detail-section">
+                <div class="detail-label">Synergies</div>
+                <ul class="detail-list">
+                  ${link.synergies.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+              </div>
+              ` : ''}
+              
+              ${(link.collaboration_opportunities && link.collaboration_opportunities.length > 0) ? `
+              <div class="detail-section">
+                <div class="detail-label">Collaboration Opportunities</div>
+                <ul class="detail-list">
+                  ${link.collaboration_opportunities.map(c => `<li>${c}</li>`).join('')}
+                </ul>
+              </div>
+              ` : ''}
+              
+              ${link.why_x_should_meet_y ? `
+              <div class="detail-section">
+                <div class="detail-label">Why you should meet ${link.target_name.split(' ')[0]}</div>
+                <div class="detail-content">${link.why_x_should_meet_y}</div>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+          <button class="toggle-btn">+</button>
+        `;
+
+        // Toggle expand/collapse
+        const toggleBtn = item.querySelector('.toggle-btn');
+        toggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          item.classList.toggle('expanded');
+        });
+
+        // Also toggle on tap anywhere on the card
+        item.addEventListener('click', () => {
+          item.classList.toggle('expanded');
+        });
+
+        connectionList.appendChild(item);
+      });
+    }
+
+    // Build exclusions modal
+    function buildExclusionsModal() {
+      const content = document.getElementById('exclusions-content');
+      content.innerHTML = '';
+
+      const myExclusions = exclusions[selectedProfile.name] || new Set();
+
+      // Show all other profiles as potential exclusions
+      const sortedProfiles = [...profiles]
+        .filter(p => p.name !== selectedProfile.name)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      sortedProfiles.forEach(profile => {
+        const isChecked = myExclusions.has(profile.name);
+        
+        const label = document.createElement('label');
+        label.className = 'exclusion-item';
+        label.innerHTML = `
+          <input type="checkbox" 
+                 data-name="${profile.name}"
+                 ${isChecked ? 'checked' : ''}>
+          <img class="profile-pic profile-pic-small" src="${profile.profile_picture_url || ''}" alt="">
+          <div class="exclusion-item-info">
+            <div class="exclusion-item-name">${profile.name}</div>
+            <div class="exclusion-item-headline">${profile.headline || ''}</div>
+          </div>
+        `;
+        
+        content.appendChild(label);
+      });
+    }
+
+    // Save exclusions
+    function saveExclusions() {
+      const checkboxes = document.querySelectorAll('#exclusions-content input[type="checkbox"]');
+      const newExclusions = new Set();
+      
+      checkboxes.forEach(cb => {
+        if (cb.checked) {
+          newExclusions.add(cb.dataset.name);
+        }
+      });
+
+      // Update local state
+      exclusions[selectedProfile.name] = newExclusions;
+
+      // Also update the reverse (symmetric)
+      newExclusions.forEach(otherName => {
+        if (!exclusions[otherName]) {
+          exclusions[otherName] = new Set();
+        }
+        exclusions[otherName].add(selectedProfile.name);
+      });
+
+      // Remove from reverse if unchecked
+      const allOtherNames = profiles
+        .filter(p => p.name !== selectedProfile.name)
+        .map(p => p.name);
+      
+      allOtherNames.forEach(otherName => {
+        if (!newExclusions.has(otherName) && exclusions[otherName]) {
+          exclusions[otherName].delete(selectedProfile.name);
+        }
+      });
+
+      // Rebuild connection list
+      buildConnectionList();
+
+      // Close modal
+      document.getElementById('exclusions-modal').style.display = 'none';
+    }
+
+    // Event listeners
+    document.getElementById('name-select').addEventListener('change', (e) => {
+      selectProfile(e.target.value);
+    });
+
+    document.getElementById('exclusions-btn').addEventListener('click', () => {
+      document.getElementById('exclusions-modal').style.display = 'flex';
+    });
+
+    document.getElementById('close-exclusions').addEventListener('click', () => {
+      document.getElementById('exclusions-modal').style.display = 'none';
+    });
+
+    document.getElementById('save-exclusions').addEventListener('click', saveExclusions);
+
+    document.getElementById('exclusions-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'exclusions-modal') {
+        document.getElementById('exclusions-modal').style.display = 'none';
+      }
+    });
+
+    // Initialize
+    loadData();
+  </script>
+</body>
+</html>

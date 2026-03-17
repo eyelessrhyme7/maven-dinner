@@ -1,0 +1,319 @@
+[
+  {
+    "profileUrl": "https://www.linkedin.com/in/alex-chen-demo",
+    "basic_info": {
+      "fullname": "Alex Chen",
+      "first_name": "Alex",
+      "last_name": "Chen",
+      "headline": "Software Engineer | Building developer tools",
+      "public_identifier": "alex-chen-demo",
+      "profile_url": "https://www.linkedin.com/in/alex-chen-demo",
+      "profile_picture_url": "",
+      "about": "Passionate about building tools that help developers be more productive. Currently exploring AI-assisted coding.",
+      "location": {
+        "full": "San Francisco, California",
+        "city": "San Francisco",
+        "country": "United States"
+      },
+      "follower_count": 1200,
+      "connection_count": 500,
+      "current_company": "TechStartup Inc",
+      "current_company_urn": ""
+    },
+    "experience": [
+      {
+        "title": "Software Engineer",
+        "company": "TechStartup Inc",
+        "duration": "2 years",
+        "location": "San Francisco, CA",
+        "description": "Building backend services and developer tooling."
+      },
+      {
+        "title": "Junior Developer",
+        "company": "WebAgency Co",
+        "duration": "1 year",
+        "location": "Remote",
+        "description": "Full-stack web development for client projects."
+      }
+    ],
+    "education": [
+      {
+        "school": "State University",
+        "degree": "BS Computer Science",
+        "duration": "2016 - 2020",
+        "activities": "Hackathon Club, Chess Club",
+        "description": ""
+      }
+    ],
+    "projects": [
+      {
+        "name": "CodeHelper CLI",
+        "description": "A command-line tool to automate repetitive coding tasks.",
+        "associated_company": "",
+        "start_date": "2023",
+        "end_date": "Present"
+      }
+    ],
+    "recommendations": {
+      "received_recommendations": [],
+      "given_recommendations": []
+    }
+  },
+  {
+    "profileUrl": "https://www.linkedin.com/in/jordan-patel-demo",
+    "basic_info": {
+      "fullname": "Jordan Patel",
+      "first_name": "Jordan",
+      "last_name": "Patel",
+      "headline": "Product Manager | Fintech enthusiast",
+      "public_identifier": "jordan-patel-demo",
+      "profile_url": "https://www.linkedin.com/in/jordan-patel-demo",
+      "profile_picture_url": "",
+      "about": "I love turning complex problems into simple, elegant products. Background in finance and tech.",
+      "location": {
+        "full": "New York, NY",
+        "city": "New York",
+        "country": "United States"
+      },
+      "follower_count": 800,
+      "connection_count": 450,
+      "current_company": "PayFlow",
+      "current_company_urn": ""
+    },
+    "experience": [
+      {
+        "title": "Product Manager",
+        "company": "PayFlow",
+        "duration": "1 year",
+        "location": "New York, NY",
+        "description": "Leading product for payment infrastructure."
+      },
+      {
+        "title": "Business Analyst",
+        "company": "FinCorp",
+        "duration": "2 years",
+        "location": "New York, NY",
+        "description": "Data analysis and process optimization."
+      }
+    ],
+    "education": [
+      {
+        "school": "City College",
+        "degree": "MBA",
+        "duration": "2018 - 2020",
+        "activities": "Finance Club",
+        "description": ""
+      },
+      {
+        "school": "City College",
+        "degree": "BA Economics",
+        "duration": "2014 - 2018",
+        "activities": "",
+        "description": ""
+      }
+    ],
+    "projects": [],
+    "recommendations": {
+      "received_recommendations": [
+        {
+          "recommender_name": "Sam Lee",
+          "relationship": "Former Manager",
+          "recommendation_text": "Jordan has an incredible ability to understand both the business and technical sides."
+        }
+      ],
+      "given_recommendations": []
+    }
+  },
+  {
+    "profileUrl": "https://www.linkedin.com/in/maria-santos-demo",
+    "basic_info": {
+      "fullname": "Maria Santos",
+      "first_name": "Maria",
+      "last_name": "Santos",
+      "headline": "UX Designer | Creating human-centered experiences",
+      "public_identifier": "maria-santos-demo",
+      "profile_url": "https://www.linkedin.com/in/maria-santos-demo",
+      "profile_picture_url": "",
+      "about": "Design is not just what it looks like, it's how it works. I focus on making digital products intuitive and delightful.",
+      "location": {
+        "full": "Austin, Texas",
+        "city": "Austin",
+        "country": "United States"
+      },
+      "follower_count": 650,
+      "connection_count": 320,
+      "current_company": "DesignLab",
+      "current_company_urn": ""
+    },
+    "experience": [
+      {
+        "title": "Senior UX Designer",
+        "company": "DesignLab",
+        "duration": "3 years",
+        "location": "Austin, TX",
+        "description": "Leading design for B2B SaaS products."
+      },
+      {
+        "title": "UX Designer",
+        "company": "CreativeAgency",
+        "duration": "2 years",
+        "location": "Austin, TX",
+        "description": "Designed mobile apps and websites for various clients."
+      }
+    ],
+    "education": [
+      {
+        "school": "Design Institute",
+        "degree": "BFA Graphic Design",
+        "duration": "2012 - 2016",
+        "activities": "Art Club, Photography Society",
+        "description": ""
+      }
+    ],
+    "projects": [
+      {
+        "name": "Accessibility Toolkit",
+        "description": "Open-source toolkit for building accessible web components.",
+        "associated_company": "",
+        "start_date": "2022",
+        "end_date": "Present"
+      }
+    ],
+    "recommendations": {
+      "received_recommendations": [],
+      "given_recommendations": []
+    }
+  },
+  {
+    "profileUrl": "https://www.linkedin.com/in/david-kim-demo",
+    "basic_info": {
+      "fullname": "David Kim",
+      "first_name": "David",
+      "last_name": "Kim",
+      "headline": "Founder & CEO | EdTech startup",
+      "public_identifier": "david-kim-demo",
+      "profile_url": "https://www.linkedin.com/in/david-kim-demo",
+      "profile_picture_url": "",
+      "about": "Building the future of online learning. Previously worked in ed-tech at major companies. Passionate about making education accessible.",
+      "location": {
+        "full": "Seattle, Washington",
+        "city": "Seattle",
+        "country": "United States"
+      },
+      "follower_count": 2500,
+      "connection_count": 1000,
+      "current_company": "LearnSmart",
+      "current_company_urn": ""
+    },
+    "experience": [
+      {
+        "title": "Founder & CEO",
+        "company": "LearnSmart",
+        "duration": "2 years",
+        "location": "Seattle, WA",
+        "description": "Building an AI-powered tutoring platform."
+      },
+      {
+        "title": "Product Lead",
+        "company": "BigEdTech",
+        "duration": "4 years",
+        "location": "Seattle, WA",
+        "description": "Led product development for K-12 learning tools."
+      }
+    ],
+    "education": [
+      {
+        "school": "Tech University",
+        "degree": "MS Computer Science",
+        "duration": "2012 - 2014",
+        "activities": "",
+        "description": ""
+      },
+      {
+        "school": "Tech University",
+        "degree": "BS Computer Science",
+        "duration": "2008 - 2012",
+        "activities": "Debate Team, Teaching Assistant",
+        "description": ""
+      }
+    ],
+    "projects": [],
+    "recommendations": {
+      "received_recommendations": [
+        {
+          "recommender_name": "Lisa Wong",
+          "relationship": "Co-founder",
+          "recommendation_text": "David is a visionary leader who inspires everyone around him."
+        }
+      ],
+      "given_recommendations": []
+    }
+  },
+  {
+    "profileUrl": "https://www.linkedin.com/in/emma-johnson-demo",
+    "basic_info": {
+      "fullname": "Emma Johnson",
+      "first_name": "Emma",
+      "last_name": "Johnson",
+      "headline": "Data Scientist | ML & Analytics",
+      "public_identifier": "emma-johnson-demo",
+      "profile_url": "https://www.linkedin.com/in/emma-johnson-demo",
+      "profile_picture_url": "",
+      "about": "Turning data into insights. I specialize in machine learning, statistical analysis, and building data pipelines.",
+      "location": {
+        "full": "Boston, Massachusetts",
+        "city": "Boston",
+        "country": "United States"
+      },
+      "follower_count": 950,
+      "connection_count": 400,
+      "current_company": "DataDriven Co",
+      "current_company_urn": ""
+    },
+    "experience": [
+      {
+        "title": "Senior Data Scientist",
+        "company": "DataDriven Co",
+        "duration": "2 years",
+        "location": "Boston, MA",
+        "description": "Building ML models for customer analytics and forecasting."
+      },
+      {
+        "title": "Data Analyst",
+        "company": "ConsultingFirm",
+        "duration": "3 years",
+        "location": "Boston, MA",
+        "description": "Statistical analysis and reporting for enterprise clients."
+      }
+    ],
+    "education": [
+      {
+        "school": "Research University",
+        "degree": "MS Statistics",
+        "duration": "2016 - 2018",
+        "activities": "",
+        "description": ""
+      },
+      {
+        "school": "Research University",
+        "degree": "BS Mathematics",
+        "duration": "2012 - 2016",
+        "activities": "Math Olympiad, Volunteer Tutor",
+        "description": ""
+      }
+    ],
+    "projects": [
+      {
+        "name": "Churn Predictor",
+        "description": "ML model to predict customer churn with 92% accuracy.",
+        "associated_company": "DataDriven Co",
+        "start_date": "2023",
+        "end_date": "2023"
+      }
+    ],
+    "recommendations": {
+      "received_recommendations": [],
+      "given_recommendations": []
+    }
+  }
+]

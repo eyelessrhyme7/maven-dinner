@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maven Dinner - Guess Who?</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* Page-specific styles */
+    html, body {
+      overflow-y: auto;
+      height: auto;
+      min-height: 100vh;
+    }
+    
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-top: 60px;
+    }
+
+    /* Navigation Header */
+    .nav-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-brand span {
+      color: var(--accent-green);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Game Container */
+    .game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px 100px;
+      background: radial-gradient(ellipse at center, #151520 0%, #0a0a0f 100%);
+    }
+
+    /* Top Section - Profile + Result Banner + Guess */
+    .top-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 60px;
+      margin-bottom: 40px;
+    }
+    
+    /* Result Banner - Left side */
+    .result-banner-container {
+      width: 180px;
+      text-align: center;
+      visibility: hidden;
+    }
+    
+    .result-banner-container.show {
+      visibility: visible;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result-banner {
+      font-size: 28px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .result-banner.correct {
+      color: var(--accent-green);
+      text-shadow: 0 0 30px rgba(0, 214, 125, 0.5);
+    }
+
+    .result-banner.incorrect {
+      color: var(--accent-red);
+      text-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+    }
+
+    /* Mystery Profile - Center */
+    .mystery-profile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .mystery-circle {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--bg-secondary) 0%, #1a1a25 100%);
+      border: 3px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 60px rgba(0, 214, 125, 0.1);
+      transition: all 0.5s ease;
+    }
+
+    .mystery-circle.revealed {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 60px rgba(0, 214, 125, 0.3);
+    }
+
+    .mystery-question {
+      font-size: 72px;
+      color: var(--text-muted);
+      font-weight: 300;
+      transition: opacity 0.3s ease;
+    }
+
+    .revealed-image {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .mystery-circle.revealed .mystery-question {
+      display: none;
+    }
+
+    .mystery-circle.revealed .revealed-image {
+      display: block;
+      animation: revealPop 0.5s ease;
+    }
+    
+    .profile-name {
+      margin-top: 16px;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-align: center;
+    }
+    
+    .profile-name.hidden-name {
+      color: var(--text-muted);
+    }
+
+    @keyframes revealPop {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    /* Guess Section - Right side */
+    .guess-section {
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .guess-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .guess-select {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: var(--font-main);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0b0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+    }
+
+    .guess-select:focus {
+      outline: none;
+      border-color: var(--accent-green);
+    }
+
+    .guess-select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-guess {
+      white-space: nowrap;
+      padding: 12px 20px;
+    }
+    
+    #skip-btn {
+      display: block;
+    }
+    
+    #skip-btn.hide {
+      display: none;
+    }
+    
+    /* Fun fact container - Right side after reveal */
+    .fun-fact-container {
+      width: 220px;
+      display: none;
+    }
+    
+    .fun-fact-container.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result-fun-fact {
+      background: var(--bg-glass);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: left;
+    }
+
+    .fun-fact-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-yellow);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .fun-fact-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Hints Section */
+    .hints-section {
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 30px;
+    }
+
+    .hint-card {
+      background: var(--bg-glass);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .hint-card.revealed {
+      border-color: rgba(0, 214, 125, 0.3);
+    }
+
+    .hint-card.locked {
+      cursor: pointer;
+    }
+
+    .hint-card.locked:hover {
+      background: var(--bg-glass-hover);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .hint-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .hint-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hint-label.revealed {
+      color: var(--accent-green);
+    }
+
+    .hint-unlock {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hint-content {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .hint-locked-text {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Bottom Right Controls */
+    .bottom-controls {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      z-index: 50;
+    }
+    
+    .progress-indicator {
+      background: var(--bg-glass);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    #next-btn {
+      display: none;
+    }
+    
+    #next-btn.show {
+      display: block;
+    }
+
+    /* Confetti */
+    .confetti-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      animation: confetti-fall 3s ease-out forwards;
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        transform: translateY(-100%) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    /* Shake animation for wrong answer */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    .shake {
+      animation: shake 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="nav-header">
+    <div class="nav-brand">
+      <span>◆</span> Maven Dinner
+    </div>
+    <nav class="nav-links">
+      <a href="index.html" class="nav-link">Map</a>
+      <a href="game.html" class="nav-link active">Game</a>
+      <a href="phone.html" class="nav-link">Phone</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="game-container">
+      <!-- Top Section: Result Banner | Profile | Guess Section / Fun Fact -->
+      <div class="top-section">
+        <!-- Result Banner - Left -->
+        <div class="result-banner-container" id="result-banner-container">
+          <div class="result-banner" id="result-banner"></div>
+        </div>
+        
+        <!-- Mystery Profile - Center -->
+        <div class="mystery-profile">
+          <div class="mystery-circle" id="mystery-circle">
+            <span class="mystery-question">?</span>
+            <img class="revealed-image" id="revealed-image" src="" alt="">
+          </div>
+          <div class="profile-name hidden-name" id="profile-name">???</div>
+        </div>
+        
+        <!-- Guess Section - Right (before guess) -->
+        <div class="guess-section" id="guess-section">
+          <div class="guess-row">
+            <select class="guess-select" id="guess-select">
+              <option value="">Select a person...</option>
+            </select>
+            <button class="btn btn-primary btn-guess" id="guess-btn">Guess</button>
+          </div>
+        </div>
+        
+        <!-- Fun Fact - Right (after guess) -->
+        <div class="fun-fact-container" id="fun-fact-container">
+          <div class="result-fun-fact">
+            <div class="fun-fact-label">Fun Fact</div>
+            <div class="fun-fact-text" id="fun-fact-text"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hints Section -->
+      <div class="hints-section">
+        <div class="hint-card revealed" id="hint-1">
+          <div class="hint-header">
+            <span class="hint-label revealed">Hint #1</span>
+          </div>
+          <div class="hint-content" id="hint-1-text"></div>
+        </div>
+        
+        <div class="hint-card locked" id="hint-2">
+          <div class="hint-header">
+            <span class="hint-label">Hint #2</span>
+            <span class="hint-unlock">Click to reveal</span>
+          </div>
+          <div class="hint-content">
+            <span class="hint-locked-text" id="hint-2-text">???</span>
+          </div>
+        </div>
+        
+        <div class="hint-card locked" id="hint-3">
+          <div class="hint-header">
+            <span class="hint-label">Hint #3</span>
+            <span class="hint-unlock">Click to reveal</span>
+          </div>
+          <div class="hint-content">
+            <span class="hint-locked-text" id="hint-3-text">???</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Right Controls -->
+  <div class="bottom-controls">
+    <div class="progress-indicator" id="progress">
+      Question <span id="current-q">1</span> / <span id="total-q">22</span>
+    </div>
+    <button class="btn btn-primary" id="skip-btn">Skip</button>
+    <button class="btn btn-primary" id="next-btn">Next</button>
+  </div>
+
+  <!-- Confetti Container -->
+  <div class="confetti-container" id="confetti-container"></div>
+
+  <script>
+    // Game state
+    let profiles = [];
+    let usedIndices = [];
+    let currentProfile = null;
+    let gameOver = false;
+    let hintsRevealed = [true, false, false];
+
+    // Load data
+    async function loadData() {
+      try {
+        const cacheBuster = `?t=${Date.now()}`;
+        const response = await fetch('final_data.json' + cacheBuster);
+        const data = await response.json();
+        profiles = data.profiles || [];
+        
+        // Filter to only profiles with game data
+        profiles = profiles.filter(p => 
+          p.game_data && 
+          p.game_data.hints && 
+          p.game_data.hints.length >= 3
+        );
+        
+        if (profiles.length === 0) {
+          showError('No profiles with game data found. Run the game data agent first.');
+          return;
+        }
+
+        document.getElementById('total-q').textContent = profiles.length;
+        populateDropdown();
+        nextQuestion();
+      } catch (error) {
+        console.error('Error loading data:', error);
+        showError('Error loading data. Make sure final_data.json exists.');
+      }
+    }
+
+    function showError(message) {
+      document.querySelector('.game-container').innerHTML = `
+        <div style="text-align: center; color: var(--text-secondary);">
+          <p>${message}</p>
+          <p style="font-size: 12px; margin-top: 8px;">Run the notebook and agent scripts first.</p>
+        </div>
+      `;
+    }
+
+    // Populate dropdown with all profiles
+    function populateDropdown() {
+      const select = document.getElementById('guess-select');
+      select.innerHTML = '<option value="">Select a person...</option>';
+      
+      const sortedProfiles = [...profiles].sort((a, b) => 
+        a.name.localeCompare(b.name)
+      );
+      
+      sortedProfiles.forEach(profile => {
+        const option = document.createElement('option');
+        option.value = profile.name;
+        option.textContent = profile.name;
+        select.appendChild(option);
+      });
+    }
+
+    // Get next random profile
+    function getNextProfile() {
+      const availableIndices = profiles
+        .map((_, i) => i)
+        .filter(i => !usedIndices.includes(i));
+      
+      if (availableIndices.length === 0) {
+        return null;
+      }
+      
+      const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+      usedIndices.push(randomIndex);
+      return profiles[randomIndex];
+    }
+
+    // Start next question
+    function nextQuestion() {
+      currentProfile = getNextProfile();
+      
+      if (!currentProfile) {
+        showGameComplete();
+        return;
+      }
+
+      // Reset state
+      hintsRevealed = [true, false, false];
+      gameOver = false;
+      
+      // Reset UI
+      document.getElementById('mystery-circle').classList.remove('revealed');
+      document.getElementById('result-banner-container').classList.remove('show');
+      document.getElementById('fun-fact-container').classList.remove('show');
+      document.getElementById('next-btn').classList.remove('show');
+      document.getElementById('skip-btn').classList.remove('hide');
+      document.getElementById('guess-select').disabled = false;
+      document.getElementById('guess-select').value = '';
+      document.getElementById('guess-btn').disabled = false;
+      document.getElementById('guess-section').style.display = 'flex';
+      
+      // Reset profile name to ???
+      const profileName = document.getElementById('profile-name');
+      profileName.textContent = '???';
+      profileName.classList.add('hidden-name');
+
+      // Set hints
+      const hints = currentProfile.game_data.hints;
+      document.getElementById('hint-1-text').textContent = hints[0] || 'No hint available';
+      document.getElementById('hint-2-text').textContent = '???';
+      document.getElementById('hint-3-text').textContent = '???';
+
+      // Reset hint cards
+      resetHintCard('hint-2');
+      resetHintCard('hint-3');
+
+      // Update progress
+      document.getElementById('current-q').textContent = usedIndices.length;
+    }
+
+    function resetHintCard(id) {
+      const card = document.getElementById(id);
+      card.classList.remove('revealed');
+      card.classList.add('locked');
+      card.querySelector('.hint-label').classList.remove('revealed');
+      card.querySelector('.hint-unlock').style.display = '';
+      card.querySelector('.hint-content span').classList.add('hint-locked-text');
+    }
+
+    // Reveal a hint (allowed even after game over)
+    function revealHint(hintNum) {
+      if (hintsRevealed[hintNum - 1]) return;
+      
+      const hints = currentProfile.game_data.hints;
+      const card = document.getElementById(`hint-${hintNum}`);
+      const textEl = document.getElementById(`hint-${hintNum}-text`);
+      
+      card.classList.remove('locked');
+      card.classList.add('revealed');
+      card.querySelector('.hint-label').classList.add('revealed');
+      card.querySelector('.hint-unlock').style.display = 'none';
+      
+      textEl.classList.remove('hint-locked-text');
+      textEl.textContent = hints[hintNum - 1] || 'No hint available';
+      
+      hintsRevealed[hintNum - 1] = true;
+    }
+
+    // Make guess
+    function makeGuess() {
+      const selectedName = document.getElementById('guess-select').value;
+      if (!selectedName || gameOver) return;
+
+      gameOver = true;
+      document.getElementById('guess-select').disabled = true;
+      document.getElementById('guess-btn').disabled = true;
+
+      const isCorrect = selectedName === currentProfile.name;
+      
+      // Show result
+      showResult(isCorrect);
+    }
+
+    // Show result
+    function showResult(isCorrect) {
+      const mysteryCircle = document.getElementById('mystery-circle');
+      const revealedImage = document.getElementById('revealed-image');
+      const resultBannerContainer = document.getElementById('result-banner-container');
+      const resultBanner = document.getElementById('result-banner');
+      const profileName = document.getElementById('profile-name');
+      const funFactText = document.getElementById('fun-fact-text');
+      const funFactContainer = document.getElementById('fun-fact-container');
+      const guessSection = document.getElementById('guess-section');
+      const nextBtn = document.getElementById('next-btn');
+
+      // Reveal profile picture
+      revealedImage.src = currentProfile.profile_picture_url || '';
+      mysteryCircle.classList.add('revealed');
+      
+      // Show name below profile
+      profileName.textContent = currentProfile.name;
+      profileName.classList.remove('hidden-name');
+
+      // Set result banner (left side)
+      if (isCorrect) {
+        resultBanner.textContent = 'Hooray!';
+        resultBanner.className = 'result-banner correct';
+        createConfetti();
+      } else {
+        resultBanner.textContent = 'You Lose';
+        resultBanner.className = 'result-banner incorrect';
+        mysteryCircle.classList.add('shake');
+        setTimeout(() => mysteryCircle.classList.remove('shake'), 500);
+      }
+      
+      // Show result banner on left
+      resultBannerContainer.classList.add('show');
+      
+      // Hide guess section, show fun fact on right
+      guessSection.style.display = 'none';
+      
+      // Show fun fact
+      const funFacts = currentProfile.game_data.fun_facts || [];
+      funFactText.textContent = funFacts[0] || 'An interesting person to meet at the dinner!';
+      funFactContainer.classList.add('show');
+
+      // Hide skip, show next button in bottom right
+      document.getElementById('skip-btn').classList.add('hide');
+      nextBtn.classList.add('show');
+    }
+
+    // Create confetti effect
+    function createConfetti() {
+      const container = document.getElementById('confetti-container');
+      const colors = ['#00d67d', '#ffd43b', '#4dabf7', '#ff6b6b', '#cc5de8'];
+      
+      for (let i = 0; i < 100; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.left = Math.random() * 100 + '%';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+          confetti.style.animationDelay = Math.random() * 0.5 + 's';
+          confetti.style.animationDuration = (2 + Math.random()) + 's';
+          
+          if (Math.random() > 0.5) {
+            confetti.style.borderRadius = '50%';
+          }
+          
+          container.appendChild(confetti);
+          
+          setTimeout(() => confetti.remove(), 3500);
+        }, i * 20);
+      }
+    }
+
+    // Show game complete
+    function showGameComplete() {
+      document.querySelector('.game-container').innerHTML = `
+        <div style="text-align: center;">
+          <h2 style="font-size: 32px; margin-bottom: 16px; color: var(--accent-green);">
+            Game Complete!
+          </h2>
+          <p style="color: var(--text-secondary); margin-bottom: 24px;">
+            You've gone through all ${profiles.length} attendees.
+          </p>
+          <button class="btn btn-primary" onclick="location.reload()">Play Again</button>
+        </div>
+      `;
+      document.querySelector('.bottom-controls').style.display = 'none';
+    }
+
+    // Event listeners
+    document.getElementById('hint-2').addEventListener('click', () => revealHint(2));
+    document.getElementById('hint-3').addEventListener('click', () => revealHint(3));
+    
+    document.getElementById('guess-btn').addEventListener('click', makeGuess);
+    
+    document.getElementById('skip-btn').addEventListener('click', () => {
+      // Skip moves to next question without revealing answer
+      nextQuestion();
+    });
+
+    document.getElementById('next-btn').addEventListener('click', nextQuestion);
+
+    // Allow Enter key to submit guess
+    document.getElementById('guess-select').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        makeGuess();
+      }
+    });
+
+    // Initialize
+    loadData();
+  </script>
+</body>
+</html>
